@@ -17,6 +17,7 @@ from .const import (
     CONFIG_TITLE,
     CUSTOMER_GID,
     DOMAIN,
+    ENABLE_1S,
     ENABLE_1D,
     ENABLE_1M,
     ENABLE_1MON,
@@ -70,6 +71,7 @@ async def validate_input(data: dict | Mapping[str, Any]) -> dict[str, Any]:
     return {
         CONFIG_TITLE: f"{hub.vue.customer.email} ({hub.vue.customer.customer_gid})",
         CUSTOMER_GID: f"{hub.vue.customer.customer_gid}",
+        ENABLE_1S: new_data[ENABLE_1S],
         ENABLE_1M: new_data[ENABLE_1M],
         ENABLE_1D: new_data[ENABLE_1D],
         ENABLE_1MON: new_data[ENABLE_1MON],
@@ -129,6 +131,7 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             await self.async_set_unique_id(info[CUSTOMER_GID])
             self._abort_if_unique_id_mismatch(reason="wrong_account")
             data = {
+                ENABLE_1S: user_input[ENABLE_1S],
                 ENABLE_1M: user_input[ENABLE_1M],
                 ENABLE_1D: user_input[ENABLE_1D],
                 ENABLE_1MON: user_input[ENABLE_1MON],
@@ -142,6 +145,10 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             )
 
         data_schema: dict[vol.Optional | vol.Required, Any] = {
+            vol.Optional(
+                ENABLE_1S,
+                default=current_config.data.get(ENABLE_1S, True),
+            ): cv.boolean,
             vol.Optional(
                 ENABLE_1M,
                 default=current_config.data.get(ENABLE_1M, True),

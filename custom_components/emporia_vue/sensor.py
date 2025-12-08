@@ -30,6 +30,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the sensor platform."""
+    coordinator_1s = hass.data[DOMAIN][config_entry.entry_id].get("coordinator_1s")
     coordinator_1min = hass.data[DOMAIN][config_entry.entry_id]["coordinator_1min"]
     coordinator_1mon = hass.data[DOMAIN][config_entry.entry_id]["coordinator_1mon"]
     coordinator_day_sensor = hass.data[DOMAIN][config_entry.entry_id][
@@ -37,6 +38,12 @@ async def async_setup_entry(
     ]
 
     _LOGGER.info(hass.data[DOMAIN][config_entry.entry_id])
+
+    if coordinator_1s:
+        async_add_entities(
+            CurrentVuePowerSensor(coordinator_1s, identifier)
+            for _, identifier in enumerate(coordinator_1s.data)
+        )
 
     if coordinator_1min:
         async_add_entities(

@@ -37,6 +37,7 @@ from .const import (
     CONFIG_TITLE,
     CUSTOMER_GID,
     DOMAIN,
+    ENABLE_1S,
     ENABLE_1D,
     ENABLE_1M,
     ENABLE_1MON,
@@ -76,6 +77,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
             data={
                 CONF_EMAIL: conf[CONF_EMAIL],
                 CONF_PASSWORD: conf[CONF_PASSWORD],
+                ENABLE_1S: conf[ENABLE_1S],
                 ENABLE_1M: conf[ENABLE_1M],
                 ENABLE_1D: conf[ENABLE_1D],
                 ENABLE_1MON: conf[ENABLE_1MON],
@@ -153,6 +155,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 LAST_MINUTE_DATA = data
             return data
 
+        async def async_update_data_1s() -> dict:
+            """Fetch data from API endpoint at a 1 second interval."""
+
+            return await update_sensors(vue, [Scale.SECOND.value])
+
         async def async_update_data_1mon() -> dict:
             """Fetch data from API endpoint at a 1 hour interval.
 
@@ -192,6 +199,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                                 "usage"
                             ]  # already in kwh
             return LAST_DAY_DATA
+
+        coordinator_1s = None
+        if ENABLE_1S not in entry_data or entry_data[ENABLE_1S]:
+            coordinator_1s = DataUpdateCoordinator(
+                hass,
+                _LOGGER,
+                name="sensor",
+                update_method=async_update_data_1s,
+                update_interval=timedelta(seconds=1),
+            )
+            await coordinator_1s.async_config_entry_first_refresh()
+            _LOGGER.debug("1s Update data: %s", coordinator_1s.data)
 
         coordinator_1min = None
         if ENABLE_1M not in entry_data or entry_data[ENABLE_1M]:
@@ -347,6 +366,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data[DOMAIN][entry.entry_id] = {
         VUE_DATA: vue,
+        "coordinator_1s": coordinator_1s,
         "coordinator_1min": coordinator_1min,
         "coordinator_1mon": coordinator_1mon,
         "coordinator_day_sensor": coordinator_day_sensor,
